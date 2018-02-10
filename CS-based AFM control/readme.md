@@ -5,7 +5,7 @@ Please refer (http://ieeexplore.ieee.org/abstract/document/6315406/) as the theo
 
 The control algorithm contrains 6 states with the 1st one as the initialization, with 5 independent loops.
 
-The 6 states are:
+## The 6 states:
 
 1. Initialization: In this state, users approach the tip to the sample with stepper motor using PicoView close loop control. Then release the control from PicoView to FPGA. The system writes parameters including the locations of mu-paths from desktop files to a host-to-FPGA FIFO (first in, first out) buffer. Turn on the close loop control of all the axes. The system performs the following operations,
 
@@ -37,51 +37,24 @@ Set z-axis loop to position control mode.
 Wait for |e_z(k)| reaches a settling criterion, then go to state 2.
 
 
-## FIFO data packing specifications
-For all of this to work properly, data needs to packed into both `host-to-FPGA` and `fpga-to-host` in a specific format. One of the problems I was trying to solve with this is how do you determine what is a new setpoint and what is a trajectory? 
+## The 5 loops:
+
+1. x-piezo control loop  - control x-axis direction
+2. y-piezo control loop  - control y-axis direction
+3. z-piezo control loop  - control z-axis direction
+4. state trigger control loop  - monitor and trigger state change
+5. Data recording loop
+
+## Data recording and reading
+For all of this to work properly, data needs to packed into both `host-to-FPGA` and `fpga-to-host` in a specific format.
+
 ### host-to-FPGA
-Both setpoint data (ie, move-entities) and measurement trajectory (ie, measurement entitities) come into the FPGA via the same fifo buffer. To distinguish which is which, I pack meta data with it, which is just a third number, which is always some integer. For new setpoint or movement data, this is always `j=0`. Then, when reading a new setpoint, we expect FIFO data to look like
+At the end of state 5, the next mu path location are read from host-to-FPGA FIFO with the following format:
+[x position, y position, scan direction, scan length].
 
-```
-[x_r(1), y_r(1), 0]
-```
-
-In my current setup, I expect *one* set that looks like that. The next set should correspond to a CS measurement. It will look like
-
-```
-[x_r(1), y_r(1), j, x_r(2), y(r), j, ... x_r(N), y_r(N), -1]
-```
-
-Notice that the index (meta data) j is the same, because j should be the index of the CS point we are currently measuring. The only exception to this is the end: when we reach the end of the current CS trajectory to follow, we expect `j=-1`, which is our trigger to stop measuring and transition from state 4 to state 5. 
-
-If we timeout on reading the FIFO buffer and miss data, this whole scheme falls apart. That is why my vi is set to abort if any FIFO timout occurs.
-### fpga-to-host
-Currently, I am logging data for both states 1 and states 4, i.e., both moves and measurements. In reality, we could probably drop logging data for moves. The logging FIFO spec is similar, but we have more data to pass:
-
-```
-[x(1), y(1), e_z(1), z(1), u_z(1), j, x(2), y(2), e_z(2), z(2), u_z(2), j,...]
-
-```
-
-Again, we differentiate move from measurement data. For moves, we set j=0, while for measurements we set j equal to the CS index we got from `host-to-FPGA`. This, I believe, should ease post-processing on the host side. 
-
-## Miscellanouse Concerns
-### Instability detection
-For all three axes, I check at each sample period if the control input exceeds some bound. If this is the case, I assume something has gone awry and abort. You could do something more sophiscticated I'm sure, but this works pretty well.
-
-### FPGA exit
-It is important to ensure the last values the FPGA writes to the DACs are all zero, because the DACs will hold onto their last value even after the FPGA vi exits. This is accomplished in the subvi `gracefull_return.vi`, which slowly returns all three controls towards zero, to avoid giving an uncontrolled large step input. I believe this vi should be hard coded, and not subject to user tweaking, which prevents accidently entering destructive values.
-
-### XY nonzero initial condition.
-On our piezo stage, the x and y sensor generally generate report a nonzero value for a zero control input. Therefore, I measure this initial offset before the main control loop starts, and subtract it off of all subsequent ADC measurements. 
-
-### Functionality separation
-I have tried to separate decision making from other logic in the state machine. For example, data logging, and FIFO buffer reading, and xy-axis PI control happen in more than one state. Thus, the code to do these tasks is moved outside the state machine, which prevents having code that does the same thing in more than one state. This has a couple of advantages:
-1. You only have to update the code in one place.
-2. This should decrease FPGA fabric consumption.
-
-This could also be done for the z-axis PI control, but I haven't gotten around to it yet. 
-
+### FPGA-to-host
+At state 4, data are recording to FPGA-to-host FIFO with the following format:
+[x position, y position, z position, direction signal, state index].
 
 
 ## Host VI and Front Panel Controls
