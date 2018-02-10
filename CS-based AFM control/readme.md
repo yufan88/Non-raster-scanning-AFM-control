@@ -59,27 +59,20 @@ At state 4, data are recording to FPGA-to-host FIFO with the following format:
 
 ## Host VI and Front Panel Controls
 
-### Tab 1
+### User input
 These are the most commanly used settings.
-1. `init-Zup`. Increase this to disengage the surface.
-* `trigger-0`. Hitting this transitions us from state 0 to state 1.
-* `z-UP`. This is the amount, in volts, to step the z-axis up in state 5. 
-* `numEntities`. The total number of CS entitites we intend to visit. It would be better to read this value off of some meta data in a header of the data-in.csv file
-* `ki-xy`. This is the control gain for the x and y PI controller transfer function, which looks like ki/(z -1). 
-* `TsTicks` This sets the sample frequency. 1600 ticks at 40Mhz is 25khz.
-* `TOL`. This is the tolerance to detect sample engagement in state 2.
-* `setpoint` This is the z-axis setpoint, ie error-signal=(setpoint - deflection_signal)
-* `z-u-max`. The maximum allowable z-axis input before we conclude instability and abort the entire thing. 
-* `ramp-rate` How fast we approach the sample in state 2. This is in volts per sample period and MUST be negative (for our system). -5e-6 is really slow, -5e-5 is fast in human time. It would be good to make this as fast as possible. 
+* `Z-control/Setpoint`. disengage distance to the surface.
+* `Z-I, P`. z-piezo PI controler parameter.
+* `Z-Initial I` z-piezo inital integral part.
+* `Z-limit` Z-piezo control output limit, due to FPGA and Agilent 5500 control box, it cannot be larger than 10 V.
+* `Deflection`, `X`, `Y - control` same as Z control. 
+* `ImageToSample` this is used to correspond the sample location to pixel location
+* `Clock` provides clock for each loop
+* `Threshold` provides error threshold which traggers state transfer
+* `mu path file path` provides the location of mu path
+* `STOP` stops very thing.
 
-### Tab 2: xy-axis tweaks
-1. `xy error threshold`. This determines how close to the setoint we must be to consider the x and y axes to have settled in state 1. 
-* `xy-settled samples`. How many samples the x or y axis must be inside of the error threshold before we declare settling.
 
-### Tab 3: z-axis tweaks
-1. `z-error threshold`,This determines how close to the setoint we must be to consider the z axis to have settled in 3.
-* `z-settled samples`. How many samples the z  axis must be inside of the error threshold before we declare settling. 
-`z-up-N` How many samples do we wait for in state 5.
-
+### variables - all local
 
 
