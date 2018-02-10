@@ -73,6 +73,11 @@ These are the most commanly used settings.
 * `STOP` stops very thing.
 
 
-### variables - all local
+### variables - all local variables
+* `mupahtfinishSignal` true when one mu path is scanned
+* `stageIndicator` shows the current state index
+* `zControlMode` true for deflection control, false for z-axis control 
+*  `x y z _pos/NEXT` provide the location of the mu path   
+
 
 
