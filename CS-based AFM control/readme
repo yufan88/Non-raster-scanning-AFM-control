@@ -1,4 +1,5 @@
-#Mu path sampling pattern implenmentation on Agilent 5500 AFM
+# Mu path sampling pattern implenmentation on Agilent 5500 AFM
+
 
 Please refer (http://ieeexplore.ieee.org/abstract/document/6315406/) as the theoretical analysis of this implementation. And you are welcome to contact: luoyuf@bu.edu 
 
